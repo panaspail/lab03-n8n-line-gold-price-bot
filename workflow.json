@@ -1,7 +1,175 @@
 {
-  "_comment": "นักศึกษาต้อง export workflow จาก n8n แล้วแทนที่ไฟล์นี้",
-  "name": "PLACEHOLDER - Replace with your workflow",
-  "nodes": [],
-  "connections": {},
-  "settings": {}
+  "name": "Gold-bot",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "126f470c-eaf4-47e9-a980-2e953e87dfe7",
+              "leftValue": "={{ $json.body.events[0].message.text }}",
+              "rightValue": "ราคาทอง",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "96f52edb-a938-45b2-812b-2f6a8f88b2b4",
+              "leftValue": "={{ $json.body.events[0].message.text }}",
+              "rightValue": "ทอง",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ba084993-75bb-42f9-b201-b58371bbbc48",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://api.chnwt.dev/thai-gold-api/latest",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "12cd0197-2d91-45bf-97e7-06f3897811dc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gold-bot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c733262a-d6c8-40dc-a611-0a01d8562377",
+      "name": "Webhook",
+      "webhookId": "1e5d3b4a-d4bc-4c5c-8ba9-f9b42a4e2737"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lab 03: LINE Gold Price Bot - Format Message\nconst goldData = $input.first().json;\nconst webhookData = $('Webhook').first().json;\n\n// ดึง LINE Event\nconst lineEvent = webhookData.body.events[0];\nconst replyToken = lineEvent.replyToken;\n\n// ดึงข้อมูลราคาทอง\nconst response = goldData.response;\nconst updateDate = response.update_date;\nconst updateTime = response.update_time;\nconst goldBarBuy = response.price.gold_bar.buy;\nconst goldBarSell = response.price.gold_bar.sell;\nconst goldBuy = response.price.gold.buy;\nconst goldSell = response.price.gold.sell;\n\n// สร้างข้อความ\nconst message = `📊 ราคาทองวันนี้\n━━━━━━━━━━━━━━━\n📅 ${updateDate} ${updateTime}\n\n🏆 ทองคำแท่ง 96.5%\n   💰 ขายออก: ${goldBarSell} บาท\n   💵 รับซื้อ: ${goldBarBuy} บาท\n\n💍 ทองรูปพรรณ 96.5%\n   💰 ขายออก: ${goldSell} บาท\n   💵 รับซื้อ: ${goldBuy} บาท\n\n📌 ข้อมูลจากสมาคมค้าทองคำ;`;\n\n// Return ข้อมูลสำหรับ LINE Reply API\nreturn [{\n  json: {\n    replyToken: replyToken,\n    messages: [{\n      type: \"text\",\n      text: message\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -96
+      ],
+      "id": "ce858a40-38b0-4d84-84cb-69d7a629db95",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "c63438fb-e9c7-4ca8-8ad6-38e8d671b64b",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OhoimyOuyDmF8tgk",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "54f4436b-1378-420e-ae0f-bb174dccfc54",
+  "meta": {
+    "instanceId": "6b4d91e4452f535c13ffb5c44fde0558a6fb32ad7a40c8cb58e63ea1c1bfa647"
+  },
+  "id": "9Kz56dNzAHxQnybenkeHT",
+  "tags": []
 }
